@@ -1,3 +1,6 @@
+// Package auth provides authentication and authorization middleware for the HTTP API.
+// Implements JWT-based authentication, role-based authorization, request tracing,
+// structured access logging, and rate limiting with per-user and per-IP controls.
 package auth
 
 import (
@@ -23,8 +26,8 @@ const (
 
 // Middleware holds dependencies for middleware functions
 type Middleware struct {
-	logger       *zap.Logger      // Application logger for business logic
-	accessLogger *zap.Logger      // Access logger for HTTP requests
+	logger       *zap.Logger // Application logger for business logic
+	accessLogger *zap.Logger // Access logger for HTTP requests
 	cfg          *config.Security
 }
 

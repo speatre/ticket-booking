@@ -1,3 +1,6 @@
+// Package cache provides Redis-based caching and atomic operations for high-performance
+// ticket booking. Implements seat reservation counters, event data caching,
+// and TTL-based automatic cleanup for pending bookings.
 package cache
 
 import (
@@ -8,25 +11,37 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// Cache interface để dễ test/mocking
+// Cache defines Redis operations for high-performance caching and atomic operations.
+// Provides both general caching and specialized ticket booking operations.
 type Cache interface {
+	// Set stores a value with optional TTL
 	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
+	// Get retrieves a string value from cache
 	Get(ctx context.Context, key string) (string, error)
+	// GetInt retrieves an integer value from cache
 	GetInt(ctx context.Context, key string) (int, error)
+	// Del removes a key from cache
 	Del(ctx context.Context, key string) error
+	// IncrBy atomically increments a key by n
 	IncrBy(ctx context.Context, key string, n int) (int, error)
+	// DecrementSeats atomically decrements available seats for an event
 	DecrementSeats(ctx context.Context, eventID string, qty int) (int, error)
+	// GetRemainingSeats retrieves current available seats for an event
 	GetRemainingSeats(ctx context.Context, eventID string) (int, error)
+	// GetEventIDs retrieves all event IDs that have seat tracking in cache
 	GetEventIDs(ctx context.Context) ([]string, error)
+	// Close closes the Redis connection
 	Close() error
 }
 
-// Redis implement Cache interface
+// Redis implements the Cache interface using Redis as the backing store.
+// Provides atomic operations critical for preventing ticket overbooking.
 type Redis struct {
-	client *redis.Client
+	client *redis.Client // Redis client instance
 }
 
-// MustOpen mở kết nối Redis (panic nếu fail)
+// MustOpen creates a new Redis connection and panics on failure.
+// Used during application startup where Redis connectivity is required.
 func MustOpen(addr string, db int) *Redis {
 	rdb := redis.NewClient(&redis.Options{
 		Addr: addr,
@@ -67,7 +82,8 @@ func (r *Redis) IncrBy(ctx context.Context, key string, n int) (int, error) {
 	return int(res), err
 }
 
-// Atomic decrement seats (prevent oversell)
+// DecrementSeats atomically decrements available seats to prevent overbooking.
+// Returns the new remaining count. Caller should check if result is negative and rollback if needed.
 func (r *Redis) DecrementSeats(ctx context.Context, eventID string, qty int) (int, error) {
 	key := "event:remaining:" + eventID
 	res, err := r.client.DecrBy(ctx, key, int64(qty)).Result()

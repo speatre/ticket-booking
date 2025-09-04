@@ -1,3 +1,6 @@
+// Package database provides a generic database interface abstraction over GORM.
+// Enables easy testing through mocking and provides transactional operations
+// required for safe concurrent booking operations.
 package database
 
 import (

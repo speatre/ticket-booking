@@ -12,33 +12,49 @@ import (
 	"gorm.io/gorm"
 )
 
-// ServiceInterface defines minimal operations used by booking and workers
-// and the extended operations used by HTTP handlers
+// ServiceInterface defines event management operations with Redis caching and seat reservations.
+// Provides both fast Redis-based operations and transactional database operations
+// for high-performance ticket booking with data consistency guarantees.
 type ServiceInterface interface {
+	// Get retrieves a single event by ID
 	Get(ctx context.Context, id string) (*Event, error)
+	// ReserveTx performs transactional seat reservation with row locking (safe path)
 	ReserveTx(tx *gorm.DB, eventID string, qty int) (bool, error)
+	// Release returns reserved seats back to available pool
 	Release(ctx context.Context, eventID string, qty int) error
+	// List retrieves all events with Redis caching
 	List(ctx context.Context) ([]Event, error)
+	// Reserve attempts fast Redis-based seat reservation (fast path)
 	Reserve(ctx context.Context, eventID string, qty int) (bool, error)
+	// ListPage retrieves paginated events with per-page caching
 	ListPage(ctx context.Context, limit, offset int) ([]Event, error)
+	// Create creates a new event and initializes cache
 	Create(ctx context.Context, e *Event) error
+	// Update modifies an event and invalidates relevant cache
 	Update(ctx context.Context, e *Event) error
+	// Delete removes an event and cleans up cache
 	Delete(ctx context.Context, id string) error
+	// StatsDB calculates event statistics from database (CONFIRMED bookings only)
 	StatsDB(ctx context.Context, eventID string) (tickets int64, revenueCents int64, err error)
 }
 
+// Service implements EventInterface with Redis caching for performance.
+// Uses dual-path strategy: Redis for speed, database transactions for consistency.
 type Service struct {
-	db     *gorm.DB
-	repo   EventRepository
-	cache  cache.Cache
-	logger *zap.Logger
+	db     *gorm.DB        // Database connection for transactions
+	repo   EventRepository // Data access layer for events
+	cache  cache.Cache     // Redis cache for performance optimization
+	logger *zap.Logger     // Structured logger
 }
 
+// NewService creates a new event service with required dependencies.
+// All parameters are required for proper caching and transaction handling.
 func NewService(db *gorm.DB, r EventRepository, cache cache.Cache, logger *zap.Logger) *Service {
 	return &Service{db: db, repo: r, cache: cache, logger: logger}
 }
 
-// List events with Redis cache
+// List retrieves all events with Redis caching for improved performance.
+// Cache TTL is 30 seconds to balance freshness with performance.
 func (s *Service) List(ctx context.Context) ([]Event, error) {
 	const cacheKey = "events:list"
 
@@ -71,7 +87,8 @@ func (s *Service) List(ctx context.Context) ([]Event, error) {
 	return evts, nil
 }
 
-// ListPage returns a page of events with cache per (limit,offset)
+// ListPage returns paginated events with per-page Redis caching.
+// Each page is cached separately to optimize common pagination patterns.
 func (s *Service) ListPage(ctx context.Context, limit, offset int) ([]Event, error) {
 	cacheKey := fmt.Sprintf("events:list:%d:%d", limit, offset)
 	if raw, err := s.cache.Get(ctx, cacheKey); err == nil && raw != "" {
@@ -148,7 +165,9 @@ func (s *Service) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-// Reserve seats atomically in Redis (fast path)
+// Reserve performs atomic seat reservation in Redis (fast path).
+// Uses Redis DECRBY for atomic operations. Automatically rolls back on insufficient seats.
+// This is the high-performance path but may have Redis-DB inconsistencies under failure scenarios.
 func (s *Service) Reserve(ctx context.Context, eventID string, qty int) (bool, error) {
 	remaining, err := s.cache.DecrementSeats(ctx, eventID, qty)
 	if err != nil {
@@ -165,7 +184,9 @@ func (s *Service) Reserve(ctx context.Context, eventID string, qty int) (bool, e
 	return true, nil
 }
 
-// ReserveTx seats inside DB transaction (safe path)
+// ReserveTx performs transactional seat reservation with row locking (safe path).
+// Uses database row-level locking to prevent race conditions and ensure data consistency.
+// This is the authoritative reservation method used during booking transactions.
 func (s *Service) ReserveTx(tx *gorm.DB, eventID string, qty int) (bool, error) {
 	ok, err := s.repo.Reserve(tx, eventID, qty)
 	if err != nil {
