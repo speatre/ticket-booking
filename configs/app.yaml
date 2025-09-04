@@ -1,0 +1,46 @@
+app:
+  name: ${APP_NAME:-ticket-booking}
+  addr: ":8080"
+  env: ${APP_ENV:-dev}
+
+server:
+  http_addr: ":8080"
+  metrics_addr: ":8081"
+
+security:
+  jwt_access_secret: ${JWT_ACCESS_SECRET:-access_secret_here}
+  jwt_refresh_secret: ${JWT_REFRESH_SECRET:-refresh_secret_here}
+  access_ttl_minutes: 15
+  refresh_ttl_minutes: 720
+
+postgres:
+  dsn: ${POSTGRES_DSN:-host=localhost port=5432 user=postgres password=postgres dbname=ticket_booking sslmode=disable}
+
+redis:
+  addr: ${REDIS_ADDR:-localhost:6379}
+  db: 0
+
+rabbitmq:
+  url: ${RABBITMQ_URL:-amqp://guest:guest@localhost:5672/}
+  payment_queue: "payment_queue"
+  cancel_queue: "cancel_delay_queue"
+
+elasticsearch:
+  url: ${ELASTICSEARCH_URL:-http://localhost:9200}
+
+logging:
+  dir: "logs"
+  retention_days: 30
+
+booking:
+  auto_cancel_minutes: 15
+  page_default_limit: 20
+  page_max_limit: 100
+
+worker:
+  auto_cancel_minutes: 15
+  poller_interval_seconds: 60
+  payment_success_rate: 90
+
+observability:
+  metrics_update_seconds: 15

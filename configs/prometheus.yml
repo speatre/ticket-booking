@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'ticket-booking'
+    static_configs:
+      - targets: ['app:8081']
+        labels:
+          app: ticket-booking

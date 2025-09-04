@@ -1,0 +1,41 @@
+# Production Configuration
+# This file contains production-specific overrides
+# Base configuration is loaded from app.yaml
+
+app:
+  name: ticket-booking
+  env: production
+
+# Security - Use strong secrets in production
+security:
+  jwt_access_secret: ${JWT_ACCESS_SECRET}  # Must be set via environment
+  jwt_refresh_secret: ${JWT_REFRESH_SECRET}  # Must be set via environment
+  access_ttl_minutes: 15  # Shorter sessions in production
+  refresh_ttl_minutes: 10080  # 7 days
+
+# Database - Production database
+postgres:
+  dsn: ${POSTGRES_DSN}  # Must be set via environment for security
+
+# Redis - Production Redis
+redis:
+  addr: ${REDIS_ADDR}  # Production Redis instance
+  db: 0
+
+# RabbitMQ - Production message queue
+rabbitmq:
+  url: ${RABBITMQ_URL}  # Production RabbitMQ instance
+
+# Logging - More retention in production
+logging:
+  retention_days: 90
+  dir: logs
+
+# Worker - Higher success rate in production
+worker:
+  payment_success_rate: 95
+
+# Observability - More frequent metrics in production
+observability:
+  metrics_update_seconds: 10
+

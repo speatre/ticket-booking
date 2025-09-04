@@ -1,0 +1,41 @@
+# Development Configuration
+# This file contains development-specific overrides
+# Base configuration is loaded from app.yaml
+
+app:
+  name: ticket-booking-dev
+  env: development
+
+# Security - Use development secrets
+security:
+  jwt_access_secret: "dev_access_secret_key_here_change_in_production"
+  jwt_refresh_secret: "dev_refresh_secret_key_here_change_in_production"
+  access_ttl_minutes: 60  # Longer sessions for development
+  refresh_ttl_minutes: 10080  # 7 days
+
+# Database - Development database
+postgres:
+  dsn: "host=localhost port=5432 user=postgres password=postgres dbname=ticket_booking sslmode=disable"
+
+# Redis - Development Redis
+redis:
+  addr: "localhost:6379"
+  db: 0
+
+# RabbitMQ - Development message queue
+rabbitmq:
+  url: "amqp://guest:guest@localhost:5672/"
+
+# Logging - Less retention in development
+logging:
+  retention_days: 7
+  dir: logs
+
+# Worker - Lower success rate for testing error scenarios
+worker:
+  payment_success_rate: 85
+
+# Observability - Less frequent metrics in development
+observability:
+  metrics_update_seconds: 30
+

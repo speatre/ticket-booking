@@ -1,0 +1,46 @@
+{
+  "id": null,
+  "uid": "ticket-booking",
+  "title": "Ticket Booking Overview",
+  "tags": ["ticket-booking"],
+  "timezone": "browser",
+  "schemaVersion": 36,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Tickets Sold by Event",
+      "id": 1,
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "tickets_sold_total",
+          "legendFormat": "{{event_id}}"
+        }
+      ],
+      "lines": true,
+      "linewidth": 2
+    },
+    {
+      "type": "graph",
+      "title": "Revenue by Event ($)",
+      "id": 2,
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "revenue_total",
+          "legendFormat": "{{event_id}}"
+        }
+      ],
+      "lines": true,
+      "linewidth": 2
+    }
+  ]
+}
+
+
+
+
+
+

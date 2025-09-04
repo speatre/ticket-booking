@@ -1,0 +1,589 @@
+basePath: /api/v1
+definitions:
+  internal_booking.BookingResponse:
+    properties:
+      event_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      quantity:
+        example: 2
+        type: integer
+      status:
+        allOf:
+        - $ref: '#/definitions/internal_booking.Status'
+        example: CONFIRMED
+      user_id:
+        example: 42e1d21e-1111-2222-3333-444455556666
+        type: string
+    type: object
+  internal_booking.CreateBookingRequest:
+    properties:
+      event_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      quantity:
+        example: 2
+        maximum: 10
+        minimum: 1
+        type: integer
+    required:
+    - event_id
+    - quantity
+    type: object
+  internal_booking.CreateBookingResponse:
+    properties:
+      booking_id:
+        example: 123e4567-e89b-12d3-a456-426614174000
+        type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/internal_booking.Status'
+        example: PENDING
+    type: object
+  internal_booking.ErrorResponse:
+    properties:
+      error:
+        example: invalid request
+        type: string
+    type: object
+  internal_booking.Status:
+    enum:
+    - PENDING
+    - CONFIRMED
+    - CANCELLED
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusConfirmed
+    - StatusCancelled
+  internal_event.CreateEventRequest:
+    properties:
+      capacity:
+        example: 100
+        minimum: 1
+        type: integer
+      description:
+        example: A conference about future tech
+        type: string
+      ends_at:
+        example: "2025-09-01T17:00:00Z"
+        type: string
+      name:
+        example: Tech Conference 2025
+        type: string
+      starts_at:
+        example: "2025-09-01T09:00:00Z"
+        type: string
+      ticket_price_cents:
+        example: 5000
+        minimum: 0
+        type: integer
+    required:
+    - capacity
+    - name
+    - ticket_price_cents
+    type: object
+  internal_event.ErrorResponse:
+    properties:
+      error:
+        example: invalid request
+        type: string
+    type: object
+  internal_event.EventResponse:
+    properties:
+      date_time:
+        example: "2025-09-02T09:00:00+07:00"
+        type: string
+      description:
+        example: A conference about future tech
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: Tech Conference 2025
+        type: string
+      remaining:
+        example: 95
+        type: integer
+      ticket_price:
+        example: 50
+        type: number
+      total_tickets:
+        example: 100
+        type: integer
+    type: object
+  internal_event.UpdateEventRequest:
+    properties:
+      capacity:
+        example: 150
+        minimum: 0
+        type: integer
+      description:
+        example: Updated description
+        type: string
+      ends_at:
+        example: "2025-09-02T17:00:00Z"
+        type: string
+      name:
+        example: Updated Conference
+        type: string
+      starts_at:
+        example: "2025-09-02T09:00:00Z"
+        type: string
+      ticket_price_cents:
+        example: 6000
+        minimum: 0
+        type: integer
+    type: object
+  internal_user.ErrorResponse:
+    properties:
+      error:
+        example: invalid request
+        type: string
+    type: object
+  internal_user.LoginRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: secret123
+        maxLength: 64
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_user.LoginResponse:
+    properties:
+      accessToken:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      refreshToken:
+        example: dGhpc19pc19hX3NhbXBsZV9yZWZyZXNoX3Rva2Vu
+        type: string
+    type: object
+  internal_user.RefreshTokenRequest:
+    properties:
+      refreshToken:
+        example: dGhpc19pc19hX3NhbXBsZV9yZWZyZXNoX3Rva2Vu
+        type: string
+    required:
+    - refreshToken
+    type: object
+  internal_user.RegisterRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: secret123
+        maxLength: 64
+        minLength: 8
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  internal_user.RegisterResponse:
+    properties:
+      user_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+    type: object
+  internal_user.UpdateProfileRequest:
+    properties:
+      full_name:
+        example: John Doe
+        maxLength: 100
+        minLength: 2
+        type: string
+    type: object
+  internal_user.UpdateProfileResponse:
+    properties:
+      ok:
+        example: true
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: A ticket booking system with user authentication, event management,
+    and booking functionality
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Ticket Booking API
+  version: "1.0"
+paths:
+  /admin/events:
+    post:
+      consumes:
+      - application/json
+      description: Create a new event (Admin only)
+      parameters:
+      - description: Event data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_event.CreateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_event.EventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_event.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create event
+      tags:
+      - events
+  /admin/events/{id}:
+    delete:
+      description: Delete an event (Admin only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_event.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete event
+      tags:
+      - events
+    put:
+      consumes:
+      - application/json
+      description: Update event details (Admin only)
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated event data
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_event.UpdateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_event.EventResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_event.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_event.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update event
+      tags:
+      - events
+  /bookings:
+    post:
+      consumes:
+      - application/json
+      description: Create a booking for an event (only authenticated users)
+      parameters:
+      - description: Booking request
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_booking.CreateBookingRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_booking.CreateBookingResponse'
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/internal_booking.ErrorResponse'
+        "409":
+          description: Conflict (e.g., overbooking)
+          schema:
+            $ref: '#/definitions/internal_booking.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_booking.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create booking
+      tags:
+      - bookings
+  /bookings/{id}:
+    get:
+      description: Get booking details by ID (only authenticated users)
+      parameters:
+      - description: Booking ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_booking.BookingResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_booking.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_booking.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get booking
+      tags:
+      - bookings
+  /events:
+    get:
+      description: Get all available events
+      parameters:
+      - description: Max items to return (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset for pagination (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/internal_event.EventResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/internal_event.ErrorResponse'
+      summary: List events
+      tags:
+      - events
+  /events/{id}:
+    get:
+      description: Retrieve a single event by its ID
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_event.EventResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_event.ErrorResponse'
+      summary: Get event by ID
+      tags:
+      - events
+  /events/{id}/stats:
+    get:
+      description: Get total tickets sold and estimated revenue for an event
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/internal_event.ErrorResponse'
+      summary: Event statistics
+      tags:
+      - events
+  /users/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update own user info (only the authenticated user can update self)
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Profile update
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_user.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_user.UpdateProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_user.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/internal_user.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user profile
+      tags:
+      - users
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return JWT access & refresh tokens
+      parameters:
+      - description: Login credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_user.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_user.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_user.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_user.ErrorResponse'
+      summary: User login
+      tags:
+      - users
+  /users/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Use refresh token to get a new access token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_user.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_user.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_user.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/internal_user.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account
+      parameters:
+      - description: User registration
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/internal_user.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/internal_user.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/internal_user.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/internal_user.ErrorResponse'
+      summary: Register new user
+      tags:
+      - users
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
